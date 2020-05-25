@@ -1,4 +1,6 @@
-namespace pipelines
+using Pipelines.Common;
+
+namespace Ferarias.MyPipeline
 {
     public class IntToStringStep : IPipelineStep<int, string>
     {

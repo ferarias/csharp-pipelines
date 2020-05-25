@@ -1,8 +1,7 @@
 using System;
 
-namespace pipelines
+namespace Pipelines.Common
 {
-
     public static class PipelineStepEventExtensions
     {
         public static OUTPUT Step<INPUT, OUTPUT>(this INPUT input, IPipelineStep<INPUT, OUTPUT> step, Action<INPUT> inputEvent = null, Action<OUTPUT> outputEvent = null)

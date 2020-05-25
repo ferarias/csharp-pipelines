@@ -1,6 +1,6 @@
 using System;
 
-namespace pipelines
+namespace Pipelines.Common
 {
     public abstract class BasePipelineStep<TInput, TOutput> : IPipelineStep<TInput, TOutput>
     {

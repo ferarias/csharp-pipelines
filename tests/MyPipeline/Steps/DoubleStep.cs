@@ -1,8 +1,7 @@
-using System;
+using Pipelines.Common;
 
-namespace pipelines
+namespace Ferarias.MyPipeline
 {
-
     public class DoubleStep : BasePipelineStep<int,int>
     {
         protected override int ProcessStep(int input)

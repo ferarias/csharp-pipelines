@@ -1,6 +1,6 @@
 using System;
 
-namespace pipelines
+namespace Pipelines.Common
 {
 
     public class EventStep<INPUT, OUTPUT> : IPipelineStep<INPUT, OUTPUT>
