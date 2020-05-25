@@ -9,7 +9,7 @@ namespace Pipelines.FunctionalTests.Steps
         protected override int ProcessStep(double input)
         {
             var output = (int)Math.Round(input);
-            Log.Debug("Aclarando '{input}' [{itype}] ==> '{output}' [{otype}]",
+            Log.Debug("Centrifugando '{input}' [{itype}] ==> '{output}' [{otype}]",
                 input, input.GetType().Name,
                 output, output.GetType().Name);
             return output;

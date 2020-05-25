@@ -30,6 +30,10 @@ namespace Pipelines.FunctionalTests
 
             Log.Information("Output Value: {value} [{type}]", output, output.GetType().Name);
 
+            var output2 = pipeline.Process("pepe2");
+
+            Log.Information("Output Value: {value} [{type}]", output2, output2.GetType().Name);
+
             return 0;
         }
     }

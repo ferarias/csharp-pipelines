@@ -17,7 +17,7 @@ namespace Pipelines.Common
             Action<TInput> inputEvent = null,
             Action<TOutput> outputEvent = null)
         {
-            var eventDecorator = new EventStep<TInput, TOutput>(step);
+            var eventDecorator = new PipelineStep<TInput, TOutput>(step);
             eventDecorator.OnInput += inputEvent;
             eventDecorator.OnOutput += outputEvent;
 

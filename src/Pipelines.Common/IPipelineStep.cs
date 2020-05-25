@@ -1,7 +1,7 @@
 namespace Pipelines.Common
 {
     /// <summary>
-    /// Interface for steps. Get an input, return an output
+    /// Interface for steps. Get an input->process->return an output
     /// </summary>
     /// <typeparam name="TInput">Type of the input</typeparam>
     /// <typeparam name="TOutput">Type of the output</typeparam>

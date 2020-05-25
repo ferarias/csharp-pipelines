@@ -7,7 +7,7 @@ namespace Pipelines.Common
     /// </summary>
     /// <typeparam name="TInput">Type of the input</typeparam>
     /// <typeparam name="TOutput">Type of the output</typeparam>
-    public abstract class Pipeline<TInput, TOutput>
+    public abstract class Pipeline<TInput, TOutput> : IPipelineStep<TInput, TOutput>
     {
         /// <summary>
         /// A function that implements all the steps.

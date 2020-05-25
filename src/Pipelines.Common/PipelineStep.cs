@@ -3,11 +3,13 @@ using System;
 namespace Pipelines.Common
 {
     /// <summary>
-    /// Implementation of a step that allows event handling
+    /// Implementation of a simple step
+    /// Delegates the process to an internal IPipelineStep
     /// </summary>
     /// <typeparam name="TInput">Type of the input</typeparam>
     /// <typeparam name="TOutput">Type of the output</typeparam>
-    public class EventStep<TInput, TOutput> : IPipelineStep<TInput, TOutput>
+    /// <seealso cref="BasePipelineStep" />
+    public class PipelineStep<TInput, TOutput> : IPipelineStep<TInput, TOutput>
     {
         /// <summary>
         /// Action to invoke before processing input
@@ -28,7 +30,7 @@ namespace Pipelines.Common
         /// Constructor
         /// </summary>
         /// <param name="innerStep">The actual step to perform</param>
-        public EventStep(IPipelineStep<TInput,TOutput> innerStep)
+        public PipelineStep(IPipelineStep<TInput,TOutput> innerStep)
         {
             _innerStep = innerStep;
         }
