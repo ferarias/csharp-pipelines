@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/tests/MyPipeline/bin/Debug/netcoreapp3.1/MyPipeline.dll",
+            "program": "${workspaceFolder}/tests/Pipelines.FunctionalTests/bin/Debug/netcoreapp3.1/Pipelines.FunctionalTests.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/tests/MyPipeline",
+            "cwd": "${workspaceFolder}/tests/Pipelines.FunctionalTests",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

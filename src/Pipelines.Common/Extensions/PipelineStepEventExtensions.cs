@@ -4,18 +4,24 @@ namespace Pipelines.Common
 {
     public static class PipelineStepEventExtensions
     {
-        public static OUTPUT Step<INPUT, OUTPUT>(this INPUT input, IPipelineStep<INPUT, OUTPUT> step, Action<INPUT> inputEvent = null, Action<OUTPUT> outputEvent = null)
+        public static TOutput AddStep<TInput, TOutput>(
+            this TInput input,
+            IPipelineStep<TInput, TOutput> step)
         {
-            if(inputEvent != null || outputEvent != null)
-            {
-                var eventDecorator = new EventStep<INPUT, OUTPUT>(step);
-                eventDecorator.OnInput += inputEvent;
-                eventDecorator.OnOutput += outputEvent;
-
-                return eventDecorator.Process(input);
-            }
-
             return step.Process(input);
+        }
+
+        public static TOutput AddStep<TInput, TOutput>(
+            this TInput input,
+            IPipelineStep<TInput, TOutput> step,
+            Action<TInput> inputEvent = null,
+            Action<TOutput> outputEvent = null)
+        {
+            var eventDecorator = new EventStep<TInput, TOutput>(step);
+            eventDecorator.OnInput += inputEvent;
+            eventDecorator.OnOutput += outputEvent;
+
+            return eventDecorator.Process(input);
         }
     }
 }

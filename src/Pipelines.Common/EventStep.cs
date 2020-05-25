@@ -2,20 +2,43 @@ using System;
 
 namespace Pipelines.Common
 {
-
-    public class EventStep<INPUT, OUTPUT> : IPipelineStep<INPUT, OUTPUT>
+    /// <summary>
+    /// Implementation of a step that allows event handling
+    /// </summary>
+    /// <typeparam name="TInput">Type of the input</typeparam>
+    /// <typeparam name="TOutput">Type of the output</typeparam>
+    public class EventStep<TInput, TOutput> : IPipelineStep<TInput, TOutput>
     {
-        public event Action<INPUT> OnInput;
-        public event Action<OUTPUT> OnOutput;
+        /// <summary>
+        /// Action to invoke before processing input
+        /// </summary>
+        public event Action<TInput> OnInput;
 
-        private readonly IPipelineStep<INPUT, OUTPUT> _innerStep;
+        /// <summary>
+        /// Action to invoke after processing output
+        /// </summary>
+        public event Action<TOutput> OnOutput;
 
-        public EventStep(IPipelineStep<INPUT,OUTPUT> innerStep)
+        /// <summary>
+        /// The actual step to perform
+        /// </summary>
+        private readonly IPipelineStep<TInput, TOutput> _innerStep;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="innerStep">The actual step to perform</param>
+        public EventStep(IPipelineStep<TInput,TOutput> innerStep)
         {
             _innerStep = innerStep;
         }
 
-        public OUTPUT Process(INPUT input)
+        /// <summary>
+        /// The process that invokes the step and optionally invokes pre and post actions
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public TOutput Process(TInput input)
         {
             OnInput?.Invoke(input);
 
