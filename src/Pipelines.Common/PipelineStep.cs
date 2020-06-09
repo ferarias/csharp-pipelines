@@ -1,6 +1,6 @@
 using System;
 
-namespace Pipelines.Common
+namespace Pipelines
 {
     /// <summary>
     /// Implementation of a simple step
@@ -30,7 +30,7 @@ namespace Pipelines.Common
         /// Constructor
         /// </summary>
         /// <param name="innerStep">The actual step to perform</param>
-        public PipelineStep(IPipelineStep<TInput,TOutput> innerStep)
+        public PipelineStep(IPipelineStep<TInput, TOutput> innerStep)
         {
             _innerStep = innerStep;
         }

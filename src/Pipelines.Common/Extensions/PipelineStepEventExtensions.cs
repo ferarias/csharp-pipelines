@@ -1,6 +1,6 @@
 using System;
 
-namespace Pipelines.Common
+namespace Pipelines.Extensions
 {
     public static class PipelineStepEventExtensions
     {

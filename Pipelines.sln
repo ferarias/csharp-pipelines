@@ -1,17 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6D21D5E2-C71F-43BC-8E97-BA34222B5249}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pipelines.Common", "src\Pipelines.Common\Pipelines.Common.csproj", "{34882C18-1855-4CF8-98D2-49D062E552C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pipelines.Common", "src\Pipelines.Common\Pipelines.Common.csproj", "{34882C18-1855-4CF8-98D2-49D062E552C9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{7AE9FEDE-0012-4995-B6A4-6DB1558A3B23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipelineFunctionalTests", "tests\Pipelines.FunctionalTests\Pipelines.FunctionalTests.csproj", "{D19C6CC2-F553-459E-81E9-1B2F02CEFE04}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pipelines.FunctionalTests", "tests\Pipelines.FunctionalTests\Pipelines.FunctionalTests.csproj", "{D19C6CC2-F553-459E-81E9-1B2F02CEFE04}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pipeline.UnitTests", "tests\Pipelines.UnitTests\Pipelines.UnitTests.csproj", "{5E00A123-2035-4192-B646-DBE443C150A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pipelines.UnitTests", "tests\Pipelines.UnitTests\Pipelines.UnitTests.csproj", "{5E00A123-2035-4192-B646-DBE443C150A9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pipelines.ApiTests", "tests\api\Pipelines.ApiTests.csproj", "{8786D96B-F821-41FF-A1FE-2501EA448BC1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,9 +23,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{34882C18-1855-4CF8-98D2-49D062E552C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -62,10 +61,29 @@ Global
 		{5E00A123-2035-4192-B646-DBE443C150A9}.Release|x64.Build.0 = Release|Any CPU
 		{5E00A123-2035-4192-B646-DBE443C150A9}.Release|x86.ActiveCfg = Release|Any CPU
 		{5E00A123-2035-4192-B646-DBE443C150A9}.Release|x86.Build.0 = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|x64.Build.0 = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Debug|x86.Build.0 = Debug|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|x64.ActiveCfg = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|x64.Build.0 = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|x86.ActiveCfg = Release|Any CPU
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{34882C18-1855-4CF8-98D2-49D062E552C9} = {6D21D5E2-C71F-43BC-8E97-BA34222B5249}
 		{D19C6CC2-F553-459E-81E9-1B2F02CEFE04} = {7AE9FEDE-0012-4995-B6A4-6DB1558A3B23}
 		{5E00A123-2035-4192-B646-DBE443C150A9} = {7AE9FEDE-0012-4995-B6A4-6DB1558A3B23}
+		{8786D96B-F821-41FF-A1FE-2501EA448BC1} = {7AE9FEDE-0012-4995-B6A4-6DB1558A3B23}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E2293CE3-F9BB-4C82-89F9-C5B9570E15B8}
 	EndGlobalSection
 EndGlobal

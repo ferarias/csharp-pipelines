@@ -1,4 +1,4 @@
-namespace Pipelines.Common
+namespace Pipelines
 {
     /// <summary>
     /// Interface for steps. Get an input->process->return an output
