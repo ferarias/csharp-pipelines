@@ -1,16 +1,21 @@
-﻿using Pipelines.ApiTests.Dto;
+﻿using System;
+using Pipelines.ApiTests.Dto;
 
 namespace Pipelines.ApiTests.SearchSteps
 {
-    public class GetRequestStep : IPipelineStep<ConnectorRequest, ProviderRequest>
+    public class GetRequestStep : IPipelineStepWithArgs<ConnectorRequest, HubRequest, ProviderRequest>
     {
-        public ProviderRequest Process(ConnectorRequest input)
+        public ProviderRequest Process(ConnectorRequest connectorRq, HubRequest hubRq)
         {
             return new ProviderRequest
             {
-                Id = input.Id
+                Id = connectorRq.Id
             };
         }
-    }
 
+        public ProviderRequest Process(ConnectorRequest connectorRequest)
+        {
+            throw new ArgumentNullException("HubRequest");
+        }
+    }
 }
