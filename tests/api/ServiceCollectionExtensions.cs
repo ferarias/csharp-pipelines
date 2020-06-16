@@ -12,15 +12,26 @@ namespace Pipelines.ApiTests
         public static IServiceCollection AddBookingPipelines(this IServiceCollection services)
         {
             var sp = services.BuildServiceProvider();
-            var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
-                .AddStep(new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>()))
-                .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
-                    .AddStep(new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>()), hubRq)
-                    .AddStep(new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>()), hubRq)
-                    .AddStep(new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>())))
-                )
-                .AddStep(new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>())));
 
+            // Create each step of the pipeline
+            var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
+            var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
+            var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
+            var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
+            var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
+
+            // Build the pipeline using the steps, in the desired order
+            var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
+                .AddStep(mapping)
+                // Sub-pipeline with three steps, two of them also use the input from parent
+                .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
+                    .AddStep(getRequest, hubRq)
+                    .AddStep(getResponse, hubRq)
+                    .AddStep(aggregate))
+                )
+                .AddStep(dedupe));
+
+            // Inject this pipeline to the service provider (it is used in the controller)
             return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(searchPipeline);
         }
     }
