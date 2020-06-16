@@ -34,5 +34,4 @@ namespace Pipelines.UnitTests
             step3mock.Verify(x => x.Process(It.IsAny<double>()), Times.Once);
         }
     }
-
 }

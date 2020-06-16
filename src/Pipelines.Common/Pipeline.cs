@@ -9,5 +9,4 @@ namespace Pipelines
             Steps = steps;
         }
     }
-
 }

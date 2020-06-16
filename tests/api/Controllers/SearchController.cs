@@ -8,11 +8,9 @@ namespace Pipelines.ApiTests.Controllers
     [Route("[controller]")]
     public class SearchController : ControllerBase
     {
-
         private readonly ILogger<SearchController> _logger;
 
         private readonly IPipelineStep<HubRequest, HubResponse> _pipeline;
-
 
         public SearchController(IPipelineStep<HubRequest, HubResponse> pipeline, ILogger<SearchController> logger)
         {
@@ -23,7 +21,7 @@ namespace Pipelines.ApiTests.Controllers
         [HttpGet("{id}")]
         public ActionResult<float> Get(int id)
         {
-            var request = new HubRequest { Id = id };
+            var request = new HubRequest { Id = id, Properties = new string[] { "1", "2", "3", "4", "5", "6" } };
 
             _logger.LogInformation("Input '{value}' [{type}]", request, request.GetType().Name);
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Pipelines.ApiTests
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -12,9 +12,6 @@ namespace Pipelines.ApiTests
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
     }
 }
