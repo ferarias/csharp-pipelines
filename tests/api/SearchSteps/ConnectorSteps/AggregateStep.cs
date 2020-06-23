@@ -17,7 +17,7 @@ namespace Pipelines.ApiTests.SearchSteps.ConnectorSteps
         {
             return new ConnectorResponse
             {
-                ResponseId = input.ResponseId,
+                Id = input.Id,
                 Availability = input.Availability.ToDictionary(x => x.Key.GetHashCode(), y => y.Value)
             };
         }

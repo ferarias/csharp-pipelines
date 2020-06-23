@@ -4,7 +4,7 @@ namespace Pipelines.ApiTests.Dto
 {
     public class ConnectorResponse
     {
-        public int ResponseId { get; set; }
+        public int Id { get; set; }
 
         public IDictionary<int, bool> Availability { get; set; }
     }

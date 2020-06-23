@@ -4,7 +4,7 @@ namespace Pipelines.ApiTests.Dto
 {
     public class ProviderRequest
     {
-        public int RequestId { get; set; }
+        public int Id { get; set; }
 
         public IEnumerable<string> Properties { get; set; }
     }

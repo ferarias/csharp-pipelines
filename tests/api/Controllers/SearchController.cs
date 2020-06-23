@@ -21,7 +21,7 @@ namespace Pipelines.ApiTests.Controllers
         [HttpGet("{id}")]
         public ActionResult<float> Get(int id)
         {
-            var request = new HubRequest { RequestId = id, Properties = new string[] { "1", "2", "3", "4", "5", "6" } };
+            var request = new HubRequest { Id = id, Properties = new string[] { "1", "2", "3", "4", "5", "6" } };
 
             _logger.LogInformation("Input '{value}' [{type}]", request, request.GetType().Name);
 

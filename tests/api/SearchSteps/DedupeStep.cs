@@ -18,7 +18,7 @@ namespace Pipelines.ApiTests.SearchSteps
         {
             return new HubResponse
             {
-                ResponseId = input.ResponseId,
+                Id = input.Id,
                 Availability = input.Availability.ToDictionary(x=> x.Key.ToString(), y=>y.Value)
             };
         }

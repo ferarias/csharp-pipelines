@@ -17,7 +17,7 @@ namespace Pipelines.ApiTests.SearchSteps
         {
             return new ConnectorRequest
             {
-                RequestId = hubRq.RequestId,
+                Id = hubRq.Id,
                 Properties = hubRq
                     .Properties
                     .Select(i => int.Parse(i) + 1000)

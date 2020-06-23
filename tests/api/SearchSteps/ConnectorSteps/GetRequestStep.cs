@@ -18,7 +18,7 @@ namespace Pipelines.ApiTests.SearchSteps
         {
             return new ProviderRequest
             {
-                RequestId = connectorRq.RequestId,
+                Id = connectorRq.Id,
                 Properties = connectorRq.Properties.Select(x => $"{hubRq.HubExtraInfo}-{x}")
             };
         }

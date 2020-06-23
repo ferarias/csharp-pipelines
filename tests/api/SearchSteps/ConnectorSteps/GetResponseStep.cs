@@ -18,7 +18,7 @@ namespace Pipelines.ApiTests.SearchSteps
         {
             var providerResponse = new ProviderResponse
             {
-                ResponseId = providerRq.RequestId,
+                Id = providerRq.Id,
                 Availability = providerRq.Properties.ToDictionary(x => x, y => (y.GetHashCode() % 2) == 0)
             };
 
