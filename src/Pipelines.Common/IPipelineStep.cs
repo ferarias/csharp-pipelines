@@ -11,7 +11,7 @@ namespace Pipelines
         /// Process the steps. Invokes the pipeline steps.
         /// </summary>
         /// <param name="input"></param>
-        /// <returns></returns>
+        /// <returns>The output of the process</returns>
         TOutput Process(TInput input);
     }
 

@@ -10,16 +10,16 @@ namespace Pipelines
     public abstract class BasePipeline<TInput, TOutput> : IPipelineStep<TInput, TOutput>
     {
         /// <summary>
-        /// A function that implements all the steps.
+        /// A function that contains all the steps.
         /// </summary>
-        /// <value></value>
+        /// <value>A function accepting TInput and returning TOutput</value>
         public Func<TInput, TOutput> Steps { get; protected set; }
 
         /// <summary>
         /// Process the steps. Invokes the pipeline steps.
         /// </summary>
         /// <param name="input"></param>
-        /// <returns></returns>
+        /// <returns>The output of processing input</returns>
         public TOutput Process(TInput input)
         {
             return Steps(input);
