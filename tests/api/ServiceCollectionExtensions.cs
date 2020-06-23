@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pipelines.ApiTests.Dto;
 using Pipelines.ApiTests.SearchSteps;
@@ -33,6 +35,30 @@ namespace Pipelines.ApiTests
 
             // Inject this pipeline to the service provider (it is used in the controller)
             return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(searchPipeline);
+        }
+
+        public static IServiceCollection AddBookingPipelines2(this IServiceCollection services)
+        {
+            var mapping = new MappingStep2();
+
+            var searchPipelineAsync = new AsyncPipeline<HubRequest, HubResponse>(hubRq => hubRq
+               .AddStep(mapping));
+
+            return services;
+        }
+        public class MappingStep2 : IAsyncPipelineStep<HubRequest, HubResponse>
+        {
+            public async Task<HubResponse> ProcessAsync(HubRequest hubRq)
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return new HubResponse
+                {
+                    Id = hubRq.Id,
+                    Availability = hubRq
+                        .Properties
+                        .ToDictionary(x => x, _ =>true)
+                };
+            }
         }
     }
 }
