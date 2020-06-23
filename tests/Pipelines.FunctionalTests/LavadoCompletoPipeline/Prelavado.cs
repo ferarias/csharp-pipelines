@@ -1,7 +1,6 @@
-using Pipelines.Common;
 using Serilog;
 
-namespace Pipelines.FunctionalTests.Steps
+namespace Pipelines.FunctionalTests.LavadoCompletoPipeline
 {
     public class Prelavado : IPipelineStep<string, string>
     {

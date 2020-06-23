@@ -1,8 +1,7 @@
 using System;
-using Pipelines.Common;
 using Serilog;
 
-namespace Pipelines.FunctionalTests.Steps
+namespace Pipelines.FunctionalTests.LavadoCompletoPipeline
 {
     public class Centrifugado : BasePipelineStep<double, int>
     {

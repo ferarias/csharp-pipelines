@@ -1,6 +1,6 @@
 using System;
 
-namespace Pipelines.Common
+namespace Pipelines.Extensions
 {
     public static class PipelineStepEventExtensions
     {
@@ -9,6 +9,13 @@ namespace Pipelines.Common
             IPipelineStep<TInput, TOutput> step)
         {
             return step.Process(input);
+        }
+
+        public static TOutput AddStep<TInput, TArg1, TOutput>(
+            this TInput input,
+            IPipelineStepWithArgs<TInput, TArg1, TOutput> step, TArg1 arg1)
+        {
+            return step.Process(input, arg1);
         }
 
         public static TOutput AddStep<TInput, TOutput>(

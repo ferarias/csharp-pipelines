@@ -1,8 +1,7 @@
 using System.Text.RegularExpressions;
-using Pipelines.Common;
 using Serilog;
 
-namespace Pipelines.FunctionalTests.Steps
+namespace Pipelines.FunctionalTests.LavadoCompletoPipeline
 {
     public class Lavado : BasePipelineStep<string, string>
     {

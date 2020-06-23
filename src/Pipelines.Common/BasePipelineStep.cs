@@ -1,6 +1,6 @@
 using System;
 
-namespace Pipelines.Common
+namespace Pipelines
 {
     /// <summary>
     /// Abstract implementation of a simple step.
