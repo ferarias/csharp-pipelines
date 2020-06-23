@@ -5,7 +5,7 @@ using Pipelines.ApiTests.Dto;
 
 namespace Pipelines.ApiTests.SearchSteps
 {
-    public class GetRequestStep : IPipelineStepWithArgs<ConnectorRequest, HubRequest, ProviderRequest>
+    public class GetRequestStep : IPipelineStep<ConnectorRequest, HubRequest, ProviderRequest>
     {
         private readonly ILogger<GetRequestStep> _logger;
 

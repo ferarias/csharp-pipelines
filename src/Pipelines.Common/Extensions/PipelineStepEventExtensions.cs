@@ -13,7 +13,7 @@ namespace Pipelines.Extensions
 
         public static TOutput AddStep<TInput, TArg1, TOutput>(
             this TInput input,
-            IPipelineStepWithArgs<TInput, TArg1, TOutput> step, TArg1 arg1)
+            IPipelineStep<TInput, TArg1, TOutput> step, TArg1 arg1)
         {
             return step.Process(input, arg1);
         }
