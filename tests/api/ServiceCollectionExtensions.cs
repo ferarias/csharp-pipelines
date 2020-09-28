@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Namespace;
 using Pipelines.ApiTests.Dto;
 using Pipelines.ApiTests.SearchSteps;
 using Pipelines.ApiTests.SearchSteps.ConnectorSteps;
@@ -7,31 +9,58 @@ using Pipelines.Extensions;
 
 namespace Pipelines.ApiTests
 {
+    public class ExampleConfigBasedPipeline : ConfigBasedPipeline<HubRequest, HubResponse>
+    {
+
+        public ExampleConfigBasedPipeline(ServiceProvider sp, string pipelineJson) : base(sp, pipelineJson)
+        {
+
+        }
+    }
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddBookingPipelines(this IServiceCollection services)
         {
+            services.AddSingleton<MappingStep>();
+            services.AddSingleton<GetRequestStep>();
+            services.AddSingleton<GetResponseStep>();
+            services.AddSingleton<AggregateStep>();
+            services.AddSingleton<DedupeStep>();
+
             var sp = services.BuildServiceProvider();
 
-            // Create each step of the pipeline
-            var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
-            var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
-            var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
-            var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
-            var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
+            // // Create each step of the pipeline
+            // var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
+            // var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
+            // var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
+            // var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
+            // var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
 
-            // Build the pipeline using the steps, in the desired order
-            var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
-                .AddStep(mapping)
-                // Sub-pipeline with three steps, two of them also use the input from parent
-                .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
-                    .AddStep(getRequest, hubRq)
-                    .AddStep(getResponse, hubRq)
-                    .AddStep(aggregate))
-                )
-                .AddStep(dedupe));
+            // // Build the pipeline using the steps, in the desired order
+            // var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
+            //     .AddStep(mapping)
+            //     // Sub-pipeline with three steps, two of them also use the input from parent
+            //     .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
+            //         .AddStep(getRequest, hubRq)
+            //         .AddStep(getResponse, hubRq)
+            //         .AddStep(aggregate))
+            //     )
+            //     .AddStep(dedupe));
 
-            // Inject this pipeline to the service provider (it is used in the controller)
+            // // Inject this pipeline to the service provider (it is used in the controller)
+
+            // services.AddSingleton<MappingStep>();
+
+            var json = @"[
+                ""Pipelines.ApiTests.SearchSteps.MappingStep"",
+                ""Pipelines.ApiTests.SearchSteps.GetRequestStep"",
+                ""Pipelines.ApiTests.SearchSteps.GetResponseStep"",
+                ""Pipelines.ApiTests.SearchSteps.ConnectorSteps.AggregateStep"",
+                ""Pipelines.ApiTests.SearchSteps.DedupeStep""
+                ]";
+
+            var searchPipeline = new ExampleConfigBasedPipeline(sp, json);
+
             return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(searchPipeline);
         }
     }
