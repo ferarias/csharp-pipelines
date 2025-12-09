@@ -40,7 +40,7 @@ public class Step3 : IPipelineStep<int, double>
 
 ```
 
-Then we build the pipeline by combinining the steps in order.
+Then we build the pipeline by combining the steps in order.
 
 ```csharp
 public class MyPipeline : Pipeline<string, int>
