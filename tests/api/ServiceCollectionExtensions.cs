@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -42,15 +43,15 @@ namespace Pipelines.ApiTests
             {
                 var mapping = new MappingStep2();
 
-                return new AsyncPipeline<HubRequest, HubResponse>(hubRq => hubRq
-                    .AddStep(mapping));
+                return new AsyncPipeline<HubRequest, HubResponse>((hubRq, ct) => hubRq
+                    .AddStep(mapping, ct));
             });
         }
         public class MappingStep2 : IAsyncPipelineStep<HubRequest, HubResponse>
         {
-            public async Task<HubResponse> ProcessAsync(HubRequest hubRq)
+            public async Task<HubResponse> ProcessAsync(HubRequest hubRq, CancellationToken cancellationToken)
             {
-                await Task.Delay(1000).ConfigureAwait(false);
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
                 return new HubResponse
                 {
                     Id = hubRq.Id,
