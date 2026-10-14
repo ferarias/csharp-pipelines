@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using Pipelines.ApiTests.Dto;
 
@@ -19,20 +18,12 @@ namespace Pipelines.ApiTests.SearchSteps
             var providerResponse = new ProviderResponse
             {
                 Id = providerRq.Id,
-                Availability = providerRq.Properties.ToDictionary(x => x, y => (y.GetHashCode() % 2) == 0)
+                Availability = providerRq.Properties.ToDictionary(x => x, y => (DeterministicHash.Compute(y) & 1) == 0)
             };
 
             _logger.LogInformation("{input},{arg1} --> {output}", providerRq, hubRq, providerResponse);
 
             return providerResponse;
-        }
-
-        ProviderResponse IPipelineStep<ProviderRequest, ProviderResponse>.Process(ProviderRequest providerRq)
-        {
-            if (providerRq == null)
-                throw new ArgumentNullException(nameof(providerRq));
-
-            throw new ArgumentNullException("HubRequest");
         }
     }
 }

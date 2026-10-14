@@ -15,17 +15,17 @@ namespace Pipelines
         TOutput Process(TInput input);
     }
 
-    public interface IPipelineStep<TInput, TParam1, TOutput> : IPipelineStep<TInput, TOutput>
+    public interface IPipelineStep<TInput, TParam1, TOutput>
     {
         TOutput Process(TInput input, TParam1 arg1);
     }
 
-    public interface IPipelineStep<TInput, TParam1, TParam2, TOutput> : IPipelineStep<TInput, TOutput>
+    public interface IPipelineStep<TInput, TParam1, TParam2, TOutput>
     {
         TOutput Process(TInput input, TParam1 arg1, TParam2 arg2);
     }
 
-    public interface IPipelineStep<TInput, TParam1, TParam2, TParam3, TOutput> : IPipelineStep<TInput, TOutput>
+    public interface IPipelineStep<TInput, TParam1, TParam2, TParam3, TOutput>
     {
         TOutput Process(TInput input, TParam1 arg1, TParam2 arg2, TParam3 arg3);
     }

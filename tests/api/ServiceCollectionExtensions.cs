@@ -13,38 +13,38 @@ namespace Pipelines.ApiTests
     {
         public static IServiceCollection AddBookingPipelines(this IServiceCollection services)
         {
-            var sp = services.BuildServiceProvider();
+            // Resolve each step and assemble the pipeline from the real service provider, instead of
+            // building a second, temporary one just to grab a few loggers.
+            return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(sp =>
+            {
+                var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
+                var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
+                var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
+                var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
+                var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
 
-            // Create each step of the pipeline
-            var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
-            var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
-            var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
-            var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
-            var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
-
-            // Build the pipeline using the steps, in the desired order
-            var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
-                .AddStep(mapping)
-                // Sub-pipeline with three steps, two of them also use the input from parent
-                .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
-                    .AddStep(getRequest, hubRq)
-                    .AddStep(getResponse, hubRq)
-                    .AddStep(aggregate))
-                )
-                .AddStep(dedupe));
-
-            // Inject this pipeline to the service provider (it is used in the controller)
-            return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(searchPipeline);
+                // Build the pipeline using the steps, in the desired order
+                return new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
+                    .AddStep(mapping)
+                    // Sub-pipeline with three steps, two of them also use the input from parent
+                    .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
+                        .AddStep(getRequest, hubRq)
+                        .AddStep(getResponse, hubRq)
+                        .AddStep(aggregate))
+                    )
+                    .AddStep(dedupe));
+            });
         }
 
         public static IServiceCollection AddBookingPipelines2(this IServiceCollection services)
         {
-            var mapping = new MappingStep2();
+            return services.AddSingleton<IAsyncPipelineStep<HubRequest, HubResponse>>(sp =>
+            {
+                var mapping = new MappingStep2();
 
-            var searchPipelineAsync = new AsyncPipeline<HubRequest, HubResponse>(hubRq => hubRq
-               .AddStep(mapping));
-
-            return services;
+                return new AsyncPipeline<HubRequest, HubResponse>(hubRq => hubRq
+                    .AddStep(mapping));
+            });
         }
         public class MappingStep2 : IAsyncPipelineStep<HubRequest, HubResponse>
         {

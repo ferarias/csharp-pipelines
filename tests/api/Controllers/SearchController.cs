@@ -19,7 +19,7 @@ namespace Pipelines.ApiTests.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<float> Get(int id)
+        public ActionResult<HubResponse> Get(int id)
         {
             var request = new HubRequest { Id = id, Properties = new string[] { "1", "2", "3", "4", "5", "6" } };
 
