@@ -37,10 +37,9 @@ There is no separate lint step; standard `dotnet build` warnings are the only si
 
 - `IPipelineStep<TInput, TOutput>` — the base contract: `TOutput Process(TInput input)`.
 - `IPipelineStep<TInput, TParam1, TOutput>` (and `TParam2`, `TParam3` overloads) — steps that also need extra
-  context beyond the piped input (e.g. the original request from an outer/parent pipeline). These still implement
-  the base single-arg `Process` too (commonly throwing if called without the extra args — see `GetRequestStep` in
-  `tests/api`). This is a Liskov Substitution violation: anything holding only an `IPipelineStep<TInput, TOutput>`
-  reference can call `Process(input)` and hit a runtime throw instead of a compile error — see "Design flaws" below.
+  context beyond the piped input (e.g. the original request from an outer/parent pipeline). These are standalone
+  interfaces — they do **not** extend the base `IPipelineStep<TInput, TOutput>`, so implementers only need the one
+  `Process` overload that actually makes sense for them (see `GetRequestStep` in `tests/api`).
 - `BasePipelineStep<TInput, TOutput>` — abstract step base exposing `OnInput`/`OnOutput` events around an
   abstract `ProcessStep`, for subclassing when you want built-in event hooks without wiring them externally.
 - `PipelineStep<TInput, TOutput>` — a decorator wrapping any `IPipelineStep<,>` to add `OnInput`/`OnOutput` events
@@ -53,8 +52,8 @@ There is no separate lint step; standard `dotnet build` warnings are the only si
 
 ### Async side
 
-Mirrors the sync side one-to-one: `IAsyncPipelineStep<TInput, TOutput>` (+ `TParam1`/`TParam2`/`TParam3` overloads,
-all extending `IAsyncPipelineStep<TInput, TOutput>`, returning `Task<TOutput>`), `BaseAsyncPipeline<TInput, TOutput>`,
+Mirrors the sync side one-to-one: `IAsyncPipelineStep<TInput, TOutput>` (+ standalone `TParam1`/`TParam2`/`TParam3`
+overloads, same as the sync side, returning `Task<TOutput>`), `BaseAsyncPipeline<TInput, TOutput>`,
 `AsyncPipeline<TInput, TOutput>`. `PipelineStepAsyncExtensions.AddStep` has two overload sets per arity — one taking
 `this TInput` (for the first step in a chain) and one taking `this Task<TInput>` (awaiting it before handing the
 result to the next step) — which is what lets multiple async steps chain with the same fluent
@@ -80,44 +79,40 @@ Steps = input => input
 
 Because each `AddStep` is just an extension method resolved by the generic types involved, **type mismatches between
 consecutive steps are compile errors**, not runtime errors — this is the central design guarantee of the library.
-It only holds for the base `IPipelineStep<TInput, TOutput>`/`IAsyncPipelineStep<TInput, TOutput>` shape, though:
-chaining an extra-argument step via its base single-arg `Process` still compiles and throws at runtime (see below).
 
-## Design flaws
+## Design flaws (fixed) and remaining ones
 
-- **Extra-argument steps violate LSP.** `IPipelineStep<TInput, TParam1, TOutput>` extends
-  `IPipelineStep<TInput, TOutput>`, forcing implementers to also provide a single-arg `Process` that commonly just
-  throws (`GetRequestStep.cs`, `GetResponseStep.cs` in `tests/api` both throw `ArgumentNullException` from it — the
-  wrong exception type for "this overload isn't supported" as well). Nothing stops `.AddStep(stepWithArgs)` (omitting
-  the extra arg) from compiling and failing at runtime. Since `Steps` is just a lambda that can close over outer
-  variables, extra-argument steps are usually unnecessary — closing over the value directly avoids the whole problem.
-  *Proposed fix (not yet applied):* drop the `: IPipelineStep<TInput, TOutput>` base from the `TParam1`/`TParam2`/
-  `TParam3` interfaces (sync and async) entirely — `AddStep`'s param-arity overloads only require the param-arity
-  interface directly, so nothing in this repo depends on that inheritance (confirmed via grep).
-- ~~Async steps don't chain~~ / ~~async extra-argument interfaces inherit the wrong base~~ — **fixed**:
-  `PipelineStepAsyncExtensions` now has `Task<TInput>`-receiver overloads so `.AddStep(a).AddStep(b)` chains, and the
-  `IAsyncPipelineStep<TInput, TParamN, TOutput>` interfaces now extend `IAsyncPipelineStep<TInput, TOutput>` instead
-  of the sync interface. See the "Async side" section above and `tests/Pipelines.UnitTests/AsyncPipelineTests.cs`
-  for the regression test.
-- **No cancellation support** anywhere in the async API (`ProcessAsync` takes no `CancellationToken`).
-- **Mutable `Steps`.** `BasePipeline<TInput, TOutput>.Steps` has a `protected set`, so a pipeline instance shared as
-  a DI singleton (as in `tests/api`) could have its behavior swapped out from under callers by any subclass code
-  path that reassigns it after construction. There's also no null-check — a subclass that forgets to set `Steps`
-  fails with a `NullReferenceException` inside `Process`, not at construction.
+The following were found during a design review and have since been fixed:
+
+- ~~Extra-argument steps violated LSP~~ — **fixed**: `IPipelineStep<TInput, TParam1, TOutput>` (and the async
+  equivalent) no longer extend the base single-arg interface, so implementers no longer need a throwing
+  single-arg `Process` override just to satisfy the type.
+- ~~Async steps didn't chain~~ / ~~async extra-argument interfaces inherited the wrong base~~ — **fixed**:
+  `PipelineStepAsyncExtensions` has `Task<TInput>`-receiver overloads so `.AddStep(a).AddStep(b)` chains (see
+  `tests/Pipelines.UnitTests/AsyncPipelineTests.cs` for the regression test).
+- ~~`tests/api`'s DI sample double-container anti-pattern~~ — **fixed**: `AddBookingPipelines`/`AddBookingPipelines2`
+  in `ServiceCollectionExtensions` now assemble the pipeline inside the `AddSingleton<...>(sp => ...)` factory
+  against the real container, instead of calling `services.BuildServiceProvider()` to build a second one.
+- ~~Sample bugs in `tests/api`~~ — **fixed**: `GetResponseStep`/`AggregateStep` now use a `DeterministicHash` helper
+  instead of `string.GetHashCode()` (which is randomized per process on .NET Core), `AddBookingPipelines2` now
+  actually registers the pipeline it builds, and `SearchController.Get` is declared `ActionResult<HubResponse>`
+  instead of `ActionResult<float>`.
+
+Remaining, lower-severity issues (not fixed, by design — see commit history / plan for rationale):
+
+- **No cancellation support** anywhere in the async API (`ProcessAsync` takes no `CancellationToken`). Would require
+  widening the public API surface; left as future work.
+- **Mutable `Steps`.** `BasePipeline<TInput, TOutput>.Steps` has a `protected set` and no null-check — a pipeline
+  instance shared as a DI singleton could have its behavior swapped post-construction, and a subclass that forgets
+  to set `Steps` fails with a `NullReferenceException` inside `Process` rather than at construction. Fixing this
+  properly means requiring `Steps` via the constructor, which would break every existing pipeline subclass
+  (`LavadoCompleto`, `SubPipeline`, etc. currently assign `Steps` in their constructor body) — left as future work.
 - **No error-handling primitive.** Any step throwing aborts the whole pipeline; there's no built-in way to
   short-circuit gracefully (e.g. a `Result<T>`-style step or a catch-and-continue mode), so this pattern is best
   suited to pipelines where a thrown exception is an acceptable failure mode for the whole chain.
 - **Arity explosion.** Supporting 0–3 extra parameters requires 4 sync interfaces, 4 async interfaces, and 4
   extension-method overloads per `AddStep` family (8 total) — adding a 4th parameter means repeating all of it again.
-- **`tests/api`'s DI sample is an anti-pattern.** `ServiceCollectionExtensions.AddBookingPipelines` calls
-  `services.BuildServiceProvider()` inside `ConfigureServices` to resolve loggers before building the pipeline by
-  hand with `new`. Building a second temporary container like this is a known ASP.NET Core anti-pattern (resolved
-  services can end up distinct from the ones the real container later creates) — don't copy this pattern.
-- **Sample bugs worth knowing about if you touch `tests/api`:** `GetResponseStep` and `AggregateStep` use
-  `string.GetHashCode()` for dictionary keys/values, which is randomized per process on .NET Core — non-deterministic
-  and a potential `ArgumentException` on key collisions in `ToDictionary`. `AddBookingPipelines2` builds a pipeline
-  and never registers or returns it. `SearchController.Get` is declared `ActionResult<float>` but returns a
-  `HubResponse`.
+  Accepted trade-off of the current design, not something to "fix" without a larger rethink.
 
 ### Extra-argument steps and sub-pipelines together
 

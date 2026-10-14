@@ -95,8 +95,8 @@ Steps = input => input
 ## Steps that need extra arguments
 
 Sometimes a step needs more than just the piped input — for example, context from the original request of an outer
-pipeline. For this, implement `IPipelineStep<TInput, TParam1, TOutput>` (overloads exist up to three extra parameters)
-in addition to the base single-argument `Process`:
+pipeline. For this, implement `IPipelineStep<TInput, TParam1, TOutput>` (overloads exist up to three extra
+parameters) instead of the base `IPipelineStep<TInput, TOutput>`:
 
 ```csharp
 public class GetRequestStep : IPipelineStep<ConnectorRequest, HubRequest, ProviderRequest>
@@ -109,18 +109,12 @@ public class GetRequestStep : IPipelineStep<ConnectorRequest, HubRequest, Provid
             Properties = connectorRequest.Properties.Select(x => $"{hubRequest.HubExtraInfo}-{x}")
         };
     }
-
-    // Required because IPipelineStep<ConnectorRequest, HubRequest, ProviderRequest> extends
-    // IPipelineStep<ConnectorRequest, ProviderRequest>, but this step can't do its job without
-    // the extra argument. Nothing stops code that only holds an
-    // IPipelineStep<ConnectorRequest, ProviderRequest> reference from calling this overload and
-    // hitting the exception at runtime — the compiler won't catch it.
-    public ProviderRequest Process(ConnectorRequest connectorRequest)
-    {
-        throw new NotSupportedException($"{nameof(GetRequestStep)} requires a {nameof(HubRequest)} argument.");
-    }
 }
 ```
+
+`IPipelineStep<TInput, TParam1, TOutput>` does **not** extend the base `IPipelineStep<TInput, TOutput>`, so a step
+like this only needs the one `Process` overload that actually makes sense for it — there's no forced single-argument
+`Process` to implement (and throw from) just to satisfy the interface.
 
 Pass the extra argument(s) when wiring the step into the pipeline:
 
@@ -215,35 +209,30 @@ Async steps still have no equivalent to `BasePipelineStep`/`PipelineStep` event 
 ## Dependency injection
 
 Because a pipeline is just an object implementing `IPipelineStep<TInput, TOutput>`, it can be built once and
-registered in a DI container like any other service, then injected wherever it's needed.
-
-The sample below (from `tests/api`) shows the pattern, but note it calls `services.BuildServiceProvider()` inside
-`ConfigureServices` to resolve each step's logger before constructing the pipeline by hand with `new`. Building a
-second, temporary provider like this is a known ASP.NET Core anti-pattern — services captured from it can end up
-as duplicate instances distinct from the ones the real container later creates. Prefer registering each step
-normally and assembling the pipeline inside a factory delegate instead, e.g.
-`services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(sp => new Pipeline<HubRequest, HubResponse>(hubRq => hubRq.AddStep(sp.GetRequiredService<MappingStep>())...))`.
+registered in a DI container like any other service, then injected wherever it's needed. The sample below (from
+`tests/api`) assembles the pipeline inside the `AddSingleton<...>(sp => ...)` factory delegate, resolving each
+step's dependencies from the real container at the point the pipeline is first requested — avoiding the classic
+ASP.NET Core "second, temporary `BuildServiceProvider()` container" anti-pattern.
 
 ```csharp
 public static IServiceCollection AddBookingPipelines(this IServiceCollection services)
 {
-    var sp = services.BuildServiceProvider();
+    return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(sp =>
+    {
+        var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
+        var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
+        var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
+        var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
+        var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
 
-    var mapping = new MappingStep(sp.GetRequiredService<ILogger<MappingStep>>());
-    var getRequest = new GetRequestStep(sp.GetRequiredService<ILogger<GetRequestStep>>());
-    var getResponse = new GetResponseStep(sp.GetRequiredService<ILogger<GetResponseStep>>());
-    var aggregate = new AggregateStep(sp.GetRequiredService<ILogger<AggregateStep>>());
-    var dedupe = new DedupeStep(sp.GetRequiredService<ILogger<DedupeStep>>());
-
-    var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
-        .AddStep(mapping)
-        .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
-            .AddStep(getRequest, hubRq)
-            .AddStep(getResponse, hubRq)
-            .AddStep(aggregate)))
-        .AddStep(dedupe));
-
-    return services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(searchPipeline);
+        return new Pipeline<HubRequest, HubResponse>(hubRq => hubRq
+            .AddStep(mapping)
+            .AddStep(new Pipeline<ConnectorRequest, ConnectorResponse>(connRq => connRq
+                .AddStep(getRequest, hubRq)
+                .AddStep(getResponse, hubRq)
+                .AddStep(aggregate)))
+            .AddStep(dedupe));
+    });
 }
 ```
 
