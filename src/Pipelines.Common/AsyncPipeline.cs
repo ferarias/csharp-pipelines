@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pipelines
@@ -6,9 +7,8 @@ namespace Pipelines
 
     public class AsyncPipeline<TInput, TOutput> : BaseAsyncPipeline<TInput, TOutput>
     {
-        public AsyncPipeline(Func<TInput, Task<TOutput>> steps)
+        public AsyncPipeline(Func<TInput, CancellationToken, Task<TOutput>> steps) : base(steps)
         {
-            Steps = steps;
         }
     }
 }
