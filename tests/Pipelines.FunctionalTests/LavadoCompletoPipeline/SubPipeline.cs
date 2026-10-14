@@ -4,11 +4,10 @@ namespace Pipelines.FunctionalTests.LavadoCompletoPipeline
 {
     public class SubPipeline : BasePipeline<string, string>
     {
-        public SubPipeline()
-        {
-            Steps = input => input
+        public SubPipeline() : base(input => input
             .AddStep(new SubpipelineSteps.Prelavadito())
-            .AddStep(new SubpipelineSteps.Lavadito());
+            .AddStep(new SubpipelineSteps.Lavadito()))
+        {
         }
     }
 }

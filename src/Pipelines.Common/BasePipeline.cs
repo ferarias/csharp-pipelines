@@ -13,7 +13,16 @@ namespace Pipelines
         /// A function that contains all the steps.
         /// </summary>
         /// <value>A function accepting TInput and returning TOutput</value>
-        public Func<TInput, TOutput> Steps { get; protected set; }
+        public Func<TInput, TOutput> Steps { get; }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="steps">A function that contains all the steps</param>
+        protected BasePipeline(Func<TInput, TOutput> steps)
+        {
+            Steps = steps ?? throw new ArgumentNullException(nameof(steps));
+        }
 
         /// <summary>
         /// Process the steps. Invokes the pipeline steps.
