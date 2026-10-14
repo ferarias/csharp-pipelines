@@ -45,10 +45,12 @@ There is no separate lint step; standard `dotnet build` warnings are the only si
 - `PipelineStep<TInput, TOutput>` — a decorator wrapping any `IPipelineStep<,>` to add `OnInput`/`OnOutput` events
   externally, without requiring the inner step to subclass anything.
 - `BasePipeline<TInput, TOutput>` — implements `IPipelineStep<TInput, TOutput>` itself by holding a
-  `Func<TInput, TOutput> Steps` and delegating `Process` to it. **This is why a `Pipeline<,>` can be used as a step
-  inside another pipeline** (sub-pipelines, see `SubPipeline.cs` and the nested `Pipeline<ConnectorRequest,...>` in
+  `Func<TInput, TOutput> Steps`, **required via a protected constructor (null-checked, immutable thereafter)**, and
+  delegating `Process` to it. **This is why a `Pipeline<,>` can be used as a step inside another pipeline**
+  (sub-pipelines, see `SubPipeline.cs` and the nested `Pipeline<ConnectorRequest,...>` in
   `ServiceCollectionExtensions`).
-- `Pipeline<TInput, TOutput>` — concrete `BasePipeline<,>` whose constructor takes the `Steps` function directly.
+- `Pipeline<TInput, TOutput>` — concrete `BasePipeline<,>` whose constructor takes the `Steps` function directly and
+  passes it to `base(...)`.
 
 ### Async side
 
@@ -58,7 +60,15 @@ overloads, same as the sync side, returning `Task<TOutput>`), `BaseAsyncPipeline
 `this TInput` (for the first step in a chain) and one taking `this Task<TInput>` (awaiting it before handing the
 result to the next step) — which is what lets multiple async steps chain with the same fluent
 `.AddStep(a).AddStep(b)` syntax as the sync side. There is still no async equivalent of `BasePipelineStep`/
-`PipelineStep` (no event-decorator support for async steps), and no `CancellationToken` support.
+`PipelineStep` (no event-decorator support for async steps).
+
+Every `IAsyncPipelineStep<,>.ProcessAsync` requires a trailing `CancellationToken` (no default — avoids the C#
+"interface default parameter resolved by the static reference type" foot-gun). `Steps` on the async side is
+`Func<TInput, CancellationToken, Task<TOutput>>`. `AddStep` and the concrete `AsyncPipeline`/
+`BaseAsyncPipeline.ProcessAsync` take an **optional** `CancellationToken cancellationToken = default` instead (safe
+on non-interface members), so `.AddStep(step)` and `await pipeline.ProcessAsync(request)` without a token still
+compile — cancellation only actually propagates if the pipeline's lambda threads the token through each
+`.AddStep(..., ct)` call.
 
 ### Composition via extension methods (`Pipelines.Extensions` namespace)
 
@@ -68,13 +78,16 @@ result to the next step) — which is what lets multiple async steps chain with 
 - `PipelineStepAsyncExtensions.AddStep` — same shape for `IAsyncPipelineStep<,>`, returning `Task<TOutput>` (no
   event-decorator overload).
 
-A pipeline is defined by assigning `Steps` to a chain of `.AddStep(...)` calls starting from the input, e.g.:
+A pipeline is defined by passing `Steps` — a chain of `.AddStep(...)` calls starting from the input — to the base
+constructor, e.g.:
 
 ```csharp
-Steps = input => input
+public MyPipeline() : base(input => input
     .AddStep(new Step1())
     .AddStep(new Step2(), someExtraArg)
-    .AddStep(new Step3(), i => Log(i), o => Log(o));
+    .AddStep(new Step3(), i => Log(i), o => Log(o)))
+{
+}
 ```
 
 Because each `AddStep` is just an extension method resolved by the generic types involved, **type mismatches between
@@ -97,16 +110,16 @@ The following were found during a design review and have since been fixed:
   instead of `string.GetHashCode()` (which is randomized per process on .NET Core), `AddBookingPipelines2` now
   actually registers the pipeline it builds, and `SearchController.Get` is declared `ActionResult<HubResponse>`
   instead of `ActionResult<float>`.
+- ~~Mutable `Steps`~~ — **fixed**: `BasePipeline<TInput, TOutput>.Steps`/`BaseAsyncPipeline<TInput, TOutput>.Steps`
+  are now `{ get; }`-only, required via a `protected` constructor with a null-check. Every pipeline subclass in this
+  repo (`Pipeline<,>`, `AsyncPipeline<,>`, `SubPipeline`, `LavadoCompleto`) now passes `Steps` through `base(...)`
+  instead of assigning it in the constructor body.
+- ~~No cancellation support~~ — **fixed**: see the "Async side" section above for the final shape (required on the
+  interface, optional on `AddStep`/`ProcessAsync`). See `tests/Pipelines.UnitTests/AsyncPipelineTests.cs` for the
+  cancellation-propagation regression test.
 
 Remaining, lower-severity issues (not fixed, by design — see commit history / plan for rationale):
 
-- **No cancellation support** anywhere in the async API (`ProcessAsync` takes no `CancellationToken`). Would require
-  widening the public API surface; left as future work.
-- **Mutable `Steps`.** `BasePipeline<TInput, TOutput>.Steps` has a `protected set` and no null-check — a pipeline
-  instance shared as a DI singleton could have its behavior swapped post-construction, and a subclass that forgets
-  to set `Steps` fails with a `NullReferenceException` inside `Process` rather than at construction. Fixing this
-  properly means requiring `Steps` via the constructor, which would break every existing pipeline subclass
-  (`LavadoCompleto`, `SubPipeline`, etc. currently assign `Steps` in their constructor body) — left as future work.
 - **No error-handling primitive.** Any step throwing aborts the whole pipeline; there's no built-in way to
   short-circuit gracefully (e.g. a `Result<T>`-style step or a catch-and-continue mode), so this pattern is best
   suited to pipelines where a thrown exception is an acceptable failure mode for the whole chain.

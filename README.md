@@ -174,37 +174,42 @@ var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRequest => hubRequ
 
 For asynchronous steps, use `IAsyncPipelineStep<TInput, TOutput>` (with the same 1-to-3 extra-parameter overloads as
 the sync side) and `AsyncPipeline<TInput, TOutput>` instead of their synchronous counterparts. Each step's
-`ProcessAsync` returns a `Task<TOutput>`, and `AddStep` composes them the same way, awaiting each step's result
-before handing it to the next:
+`ProcessAsync` takes a `CancellationToken` and returns a `Task<TOutput>`, and `AddStep` composes them the same way,
+awaiting each step's result before handing it to the next. `AsyncPipeline`'s `Steps` function itself also receives a
+`CancellationToken` — pass it along to each `.AddStep(..., ct)` call to make the whole chain cancellable:
 
 ```csharp
 public class MappingStep : IAsyncPipelineStep<HubRequest, ConnectorRequest>
 {
-    public async Task<ConnectorRequest> ProcessAsync(HubRequest hubRequest)
+    public async Task<ConnectorRequest> ProcessAsync(HubRequest hubRequest, CancellationToken cancellationToken)
     {
-        await Task.Delay(1000).ConfigureAwait(false);
+        await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         return new ConnectorRequest { Id = hubRequest.Id };
     }
 }
 
 public class DedupeStep : IAsyncPipelineStep<ConnectorRequest, HubResponse>
 {
-    public async Task<HubResponse> ProcessAsync(ConnectorRequest connectorRequest)
+    public async Task<HubResponse> ProcessAsync(ConnectorRequest connectorRequest, CancellationToken cancellationToken)
     {
-        await Task.Delay(1000).ConfigureAwait(false);
+        await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         return new HubResponse { Id = connectorRequest.Id };
     }
 }
 
-var pipeline = new AsyncPipeline<HubRequest, HubResponse>(hubRequest => hubRequest
-    .AddStep(new MappingStep())
-    .AddStep(new DedupeStep()));
+var pipeline = new AsyncPipeline<HubRequest, HubResponse>((hubRequest, ct) => hubRequest
+    .AddStep(new MappingStep(), ct)
+    .AddStep(new DedupeStep(), ct));
 
-var output = await pipeline.ProcessAsync(request);
+var output = await pipeline.ProcessAsync(request, cancellationToken);
 ```
 
-Async steps still have no equivalent to `BasePipelineStep`/`PipelineStep` event hooks, and `ProcessAsync` takes no
-`CancellationToken`.
+The `CancellationToken` is required on `IAsyncPipelineStep<TInput, TOutput>.ProcessAsync` itself (so an
+implementation can never silently ignore it), but optional on `AddStep` and on `AsyncPipeline`/
+`BaseAsyncPipeline.ProcessAsync` — so `.AddStep(step)` and `await pipeline.ProcessAsync(request)` (no token) still
+compile and work for callers who don't need cancellation.
+
+Async steps still have no equivalent to `BasePipelineStep`/`PipelineStep` event hooks.
 
 ## Dependency injection
 
