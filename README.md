@@ -110,11 +110,14 @@ public class GetRequestStep : IPipelineStep<ConnectorRequest, HubRequest, Provid
         };
     }
 
-    // Required by IPipelineStep<ConnectorRequest, ProviderRequest>, but this step
-    // can't do its job without the extra argument.
+    // Required because IPipelineStep<ConnectorRequest, HubRequest, ProviderRequest> extends
+    // IPipelineStep<ConnectorRequest, ProviderRequest>, but this step can't do its job without
+    // the extra argument. Nothing stops code that only holds an
+    // IPipelineStep<ConnectorRequest, ProviderRequest> reference from calling this overload and
+    // hitting the exception at runtime — the compiler won't catch it.
     public ProviderRequest Process(ConnectorRequest connectorRequest)
     {
-        throw new ArgumentNullException(nameof(hubRequest));
+        throw new NotSupportedException($"{nameof(GetRequestStep)} requires a {nameof(HubRequest)} argument.");
     }
 }
 ```
@@ -127,6 +130,9 @@ Steps = input => input
     .AddStep(getResponseStep, hubRequest)
     .AddStep(aggregateStep);
 ```
+
+Note: since `Steps` is a plain lambda, `hubRequest` here is just a captured closure variable — in most cases it's
+simpler to close over it directly inside a step than to thread it through as an extra pipeline argument.
 
 ## Sub-pipelines
 
@@ -172,36 +178,51 @@ var searchPipeline = new Pipeline<HubRequest, HubResponse>(hubRequest => hubRequ
 
 ## Async pipelines
 
-For asynchronous steps, use `IAsyncPipelineStep<TInput, TOutput>` (with the same 1-to-3 extra-parameter overloads)
-and `AsyncPipeline<TInput, TOutput>` instead of their synchronous counterparts. Each step's `ProcessAsync` returns a
-`Task<TOutput>`, and `AddStep` composes them the same way:
+For asynchronous steps, use `IAsyncPipelineStep<TInput, TOutput>` (with the same 1-to-3 extra-parameter overloads as
+the sync side) and `AsyncPipeline<TInput, TOutput>` instead of their synchronous counterparts. Each step's
+`ProcessAsync` returns a `Task<TOutput>`, and `AddStep` composes them the same way, awaiting each step's result
+before handing it to the next:
 
 ```csharp
-public class MappingStep : IAsyncPipelineStep<HubRequest, HubResponse>
+public class MappingStep : IAsyncPipelineStep<HubRequest, ConnectorRequest>
 {
-    public async Task<HubResponse> ProcessAsync(HubRequest hubRequest)
+    public async Task<ConnectorRequest> ProcessAsync(HubRequest hubRequest)
     {
         await Task.Delay(1000).ConfigureAwait(false);
-        return new HubResponse
-        {
-            Id = hubRequest.Id,
-            Availability = hubRequest.Properties.ToDictionary(x => x, _ => true)
-        };
+        return new ConnectorRequest { Id = hubRequest.Id };
+    }
+}
+
+public class DedupeStep : IAsyncPipelineStep<ConnectorRequest, HubResponse>
+{
+    public async Task<HubResponse> ProcessAsync(ConnectorRequest connectorRequest)
+    {
+        await Task.Delay(1000).ConfigureAwait(false);
+        return new HubResponse { Id = connectorRequest.Id };
     }
 }
 
 var pipeline = new AsyncPipeline<HubRequest, HubResponse>(hubRequest => hubRequest
-    .AddStep(new MappingStep()));
+    .AddStep(new MappingStep())
+    .AddStep(new DedupeStep()));
 
 var output = await pipeline.ProcessAsync(request);
 ```
 
-Note that async steps don't currently have an equivalent to `BasePipelineStep`/`PipelineStep` event hooks.
+Async steps still have no equivalent to `BasePipelineStep`/`PipelineStep` event hooks, and `ProcessAsync` takes no
+`CancellationToken`.
 
 ## Dependency injection
 
 Because a pipeline is just an object implementing `IPipelineStep<TInput, TOutput>`, it can be built once and
-registered in a DI container like any other service, then injected wherever it's needed:
+registered in a DI container like any other service, then injected wherever it's needed.
+
+The sample below (from `tests/api`) shows the pattern, but note it calls `services.BuildServiceProvider()` inside
+`ConfigureServices` to resolve each step's logger before constructing the pipeline by hand with `new`. Building a
+second, temporary provider like this is a known ASP.NET Core anti-pattern — services captured from it can end up
+as duplicate instances distinct from the ones the real container later creates. Prefer registering each step
+normally and assembling the pipeline inside a factory delegate instead, e.g.
+`services.AddSingleton<IPipelineStep<HubRequest, HubResponse>>(sp => new Pipeline<HubRequest, HubResponse>(hubRq => hubRq.AddStep(sp.GetRequiredService<MappingStep>())...))`.
 
 ```csharp
 public static IServiceCollection AddBookingPipelines(this IServiceCollection services)
